@@ -7,6 +7,7 @@ namespace ModernFamilyAPI.Controllers
     [ApiController]
     public class ModernFamilyController : ControllerBase
     {
+        private readonly Datacontext _db;
 
         private static List<ModernFamily> characters = new List<ModernFamily> {
                 new ModernFamily {
@@ -31,13 +32,18 @@ namespace ModernFamilyAPI.Controllers
 
                 }
             };
+       
+        public ModernFamilyController(Datacontext db)
+        {
+            _db=db;
+        }
 
         [HttpGet("getcharacter")]
-        public IActionResult Get()
+        public async Task<ActionResult<List<ModernFamily>>> Get()
         {
 
 
-            return Ok(characters); //status code 200
+            return Ok(await _db.ModernFamilies.ToListAsync()); //status code 200
 
         }
 
@@ -46,15 +52,16 @@ namespace ModernFamilyAPI.Controllers
 
         public async Task<ActionResult<List<ModernFamily>>> Add([FromBody] ModernFamily mf)
         {
-
-            characters.Add(mf);
-            return Ok(characters);
+            _db.ModernFamilies.Add(mf);
+            await _db.SaveChangesAsync();
+            //characters.Add(mf);
+            return Ok(await _db.ModernFamilies.ToListAsync());
         }
 
         [HttpGet("getsingle/{id}")]
         public async Task<ActionResult<ModernFamily>> Get(string id)
         {
-            var character = characters.Find(x => x.Id == id);
+            var character = await _db.ModernFamilies.FindAsync(id);
             if (character == null)
             {
                 return BadRequest("Character is not found");
@@ -66,7 +73,7 @@ namespace ModernFamilyAPI.Controllers
         [HttpPut("updatecharacter/{id}")]
         public async Task<ActionResult<ModernFamily>> UpdateCharacter([FromBody] ModernFamily mf)
         {
-            var character = characters.Find(x => x.Id == mf.Id);
+            var character = await _db.ModernFamilies.FindAsync(mf.Id);
             if (character == null)
             {
                 return BadRequest("Character is not found");
@@ -76,22 +83,24 @@ namespace ModernFamilyAPI.Controllers
             character.LastName=mf.LastName;
             character.SpecialFeature=mf.SpecialFeature;
 
+            await _db.SaveChangesAsync();
 
-            return Ok(character); //status code 200
+            return Ok(await _db.ModernFamilies.ToListAsync()); //status code 200
 
         }
 
         [HttpDelete("delete/{id}")]
         public async Task<ActionResult<List<ModernFamily>>> Delete(string id)
         {
-            var character = characters.Find(x => x.Id == id);
+            var character = await _db.ModernFamilies.FindAsync(id);
             if (character == null)
             {
                 return BadRequest("Character is not found");
             }
-            characters.Remove(character);
+            _db.ModernFamilies.Remove(character);
+            await _db.SaveChangesAsync();
 
-            return Ok(characters); //status code 200
+            return Ok(_db.ModernFamilies.ToListAsync()); //status code 200
 
         }
 
